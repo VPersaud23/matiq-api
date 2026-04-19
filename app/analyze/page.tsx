@@ -84,7 +84,7 @@ export default function AnalyzePage() {
     if (videoFile) {
       setProgress(15);
       setProgressLabel("Extracting video frames...");
-      frames = await extractFrames(videoFile, 8);
+      frames = await extractFrames(videoFile, 12);
     }
 
     try {
