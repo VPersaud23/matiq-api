@@ -5,21 +5,24 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
-    const { context, focus, weightClass } = await req.json();
+    const { context, focus, weightClass, frames } = await req.json();
     const isOpponent = focus === "opponent";
+    const hasFrames = Array.isArray(frames) && frames.length > 0;
 
-    const prompt = isOpponent
-      ? `You are an elite folkstyle wrestling analyst.
+    const systemPrompt = isOpponent
+      ? `You are an elite folkstyle wrestling analyst.`
+      : `You are an elite folkstyle wrestling coach with 20+ years coaching state and national champions.`;
 
-Context: ${context || "Analyze a typical wrestler"}${weightClass ? ` | Weight class: ${weightClass} lbs` : ""}
+    const userPrompt = isOpponent
+      ? `Context: ${context || "Analyze a typical wrestler"}${weightClass ? ` | Weight class: ${weightClass} lbs` : ""}
 
-Note: You will not receive actual video frames. Use the context above to generate a realistic, detailed scouting report. If minimal context is given, generate a plausible analysis for a typical wrestler at that weight class. Always return valid JSON — never decline or ask for more information.
+${hasFrames ? `You have been given ${frames.length} frames sampled evenly across the video. Use what you actually observe in the frames to inform your analysis. Reference specific visual details (body position, stance, hand fighting, etc.) when describing issues.` : "No video provided — generate a plausible analysis based on context alone."}
 
-Identify the technique being performed, then scout this wrestler's weaknesses and build a counter game plan.
+Identify the technique being performed, scout this wrestler's weaknesses, and build a counter game plan.
 
 Return ONLY this JSON (no markdown):
 {
-  "technique": "<identified or inferred technique name>",
+  "technique": "<identified technique name>",
   "overallScore": <integer 0-100, their skill level>,
   "summary": "<2-sentence scouting assessment — threat level and where they're beatable>",
   "issues": [
@@ -39,17 +42,15 @@ Return ONLY this JSON (no markdown):
     "liveWrestling": "<specific live wrestling instruction tailored to beating this opponent>"
   }
 }`
-      : `You are an elite folkstyle wrestling coach with 20+ years coaching state and national champions.
+      : `Context: ${context || "Analyze a wrestler's technique"}${weightClass ? ` | Weight class: ${weightClass} lbs` : ""}
 
-Context: ${context || "Analyze a wrestler's technique"}${weightClass ? ` | Weight class: ${weightClass} lbs` : ""}
-
-Note: You will not receive actual video frames. Use the context above to generate a realistic, detailed coaching report. If minimal context is given, generate a plausible analysis for a wrestler working on fundamentals. Always return valid JSON — never decline or ask for more information.
+${hasFrames ? `You have been given ${frames.length} frames sampled evenly across the video. Use what you actually observe in the frames to inform your analysis. Reference specific visual details (body position, stance, level changes, hand position, footwork, etc.) when describing issues and corrections.` : "No video provided — generate a plausible analysis based on context alone."}
 
 Identify the technique being performed, assess it, and build a personalized practice plan to fix the issues found.
 
 Return ONLY this JSON (no markdown):
 {
-  "technique": "<identified or inferred technique name>",
+  "technique": "<identified technique name>",
   "overallScore": <integer 0-100>,
   "summary": "<2-sentence assessment speaking directly to the wrestler>",
   "issues": [
@@ -72,15 +73,39 @@ Return ONLY this JSON (no markdown):
 
 Score honestly: 85-100=elite, 70-84=advanced, 55-69=intermediate, 40-54=beginner. List 3-4 issues, high severity first.`;
 
+    type ImageBlock = {
+      type: "image";
+      source: { type: "base64"; media_type: "image/jpeg"; data: string };
+    };
+    type TextBlock = { type: "text"; text: string };
+    type ContentBlock = ImageBlock | TextBlock;
+
+    const content: ContentBlock[] = [];
+
+    if (hasFrames) {
+      content.push({ type: "text", text: `Here are ${frames.length} frames sampled evenly from the wrestling video:` });
+      for (const frame of frames as string[]) {
+        content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: frame } });
+      }
+    }
+
+    content.push({ type: "text", text: userPrompt });
+
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 2000,
-      messages: [{ role: "user", content: prompt }],
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [{ role: "user", content }],
     });
 
     let text = (response.content[0] as { text: string }).text.trim();
-    if (text.includes("```")) {
-      text = text.split("```")[1].replace(/^json\n?/, "").trim();
+    const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) {
+      text = fenceMatch[1].trim();
+    } else {
+      const firstBrace = text.indexOf("{");
+      const lastBrace = text.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace !== -1) text = text.slice(firstBrace, lastBrace + 1);
     }
 
     const result = JSON.parse(text);

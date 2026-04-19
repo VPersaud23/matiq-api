@@ -49,10 +49,15 @@ export default function Home() {
           <p className="font-black text-sm uppercase mb-1" style={{ color: "var(--text)" }}>Analyze Technique</p>
           <p className="text-xs leading-relaxed" style={{ color: "var(--muted)" }}>Upload video → full AI coaching report + practice plan</p>
         </Link>
-        <Link href="/scout" className="rounded-2xl p-5 transition-all hover:opacity-80" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-          <p className="text-3xl mb-3">🎯</p>
-          <p className="font-black text-sm uppercase mb-1" style={{ color: "var(--text)" }}>Scout Opponents</p>
-          <p className="text-xs leading-relaxed" style={{ color: "var(--muted)" }}>AI scouting reports with tendencies & game plan</p>
+        <Link href="/drills" className="rounded-2xl p-5 transition-all hover:opacity-80" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+          <p className="text-3xl mb-3">📚</p>
+          <p className="font-black text-sm uppercase mb-1" style={{ color: "var(--text)" }}>Drill Library</p>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--muted)" }}>AI drills for every area — takedowns, top, bottom, defense</p>
+        </Link>
+        <Link href="/history" className="rounded-2xl p-5 col-span-2 transition-all hover:opacity-80" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+          <p className="text-3xl mb-3">📋</p>
+          <p className="font-black text-sm uppercase mb-1" style={{ color: "var(--text)" }}>Match History</p>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--muted)" }}>Log matches, track your record, and get AI pattern analysis across your season</p>
         </Link>
       </div>
     </div>

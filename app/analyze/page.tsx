@@ -12,12 +12,53 @@ interface AnalysisResult { technique: string; overallScore: number; summary: str
 const SEV_COLOR: Record<string, string> = { high: "var(--red)", medium: "var(--orange)", low: "var(--blue)" };
 const DAY_COLORS = ["var(--accent)", "var(--blue)", "var(--orange)", "var(--accent)", "var(--blue)", "var(--muted)"];
 
+function seekTo(video: HTMLVideoElement, time: number): Promise<void> {
+  return new Promise(resolve => {
+    video.addEventListener("seeked", () => resolve(), { once: true });
+    video.currentTime = time;
+  });
+}
+
+async function extractFrames(file: File, count = 8): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    video.muted = true;
+    video.playsInline = true;
+    video.crossOrigin = "anonymous";
+
+    video.addEventListener("loadedmetadata", async () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d")!;
+      const maxW = 640;
+      const scale = Math.min(1, maxW / video.videoWidth);
+      canvas.width = Math.round(video.videoWidth * scale);
+      canvas.height = Math.round(video.videoHeight * scale);
+
+      const frames: string[] = [];
+      const duration = video.duration;
+      for (let i = 0; i < count; i++) {
+        const t = (duration / (count + 1)) * (i + 1);
+        await seekTo(video, t);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        frames.push(canvas.toDataURL("image/jpeg", 0.75).split(",")[1]);
+      }
+      URL.revokeObjectURL(url);
+      resolve(frames);
+    });
+
+    video.addEventListener("error", reject);
+  });
+}
+
 export default function AnalyzePage() {
   const [step, setStep] = useState<Step>("upload");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [context, setContext] = useState("");
   const [weightClass, setWeightClass] = useState("");
   const [focus, setFocus] = useState<"me" | "opponent" | null>(null);
+  const [myName, setMyName] = useState("");
   const [oppName, setOppName] = useState("");
   const [oppSchool, setOppSchool] = useState("");
   const [progress, setProgress] = useState(0);
@@ -29,23 +70,30 @@ export default function AnalyzePage() {
 
   const runAnalysis = async (selectedFocus: "me" | "opponent", oppDetails?: { name: string; school: string }) => {
     setStep("loading");
-    setProgress(10);
+    setProgress(5);
     setProgressLabel("Connecting to AI coach...");
     setError("");
 
     const contextParts: string[] = [];
-    if (videoFile) contextParts.push(`Video uploaded: ${videoFile.name}`);
+    if (myName.trim()) contextParts.push(`The wrestler being analyzed (me) is: ${myName.trim()}`);
     if (context.trim()) contextParts.push(context.trim());
     if (oppDetails?.name) contextParts.push(`Opponent: ${oppDetails.name}${oppDetails.school ? ` from ${oppDetails.school}` : ""}`);
     if (!contextParts.length) contextParts.push(selectedFocus === "me" ? "Analyze my wrestling technique" : "Scout an opponent wrestler");
 
+    let frames: string[] = [];
+    if (videoFile) {
+      setProgress(15);
+      setProgressLabel("Extracting video frames...");
+      frames = await extractFrames(videoFile, 8);
+    }
+
     try {
-      setProgress(35);
+      setProgress(40);
       setProgressLabel("Analyzing technique...");
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ context: contextParts.join(". "), focus: selectedFocus, weightClass }),
+        body: JSON.stringify({ context: contextParts.join(". "), focus: selectedFocus, weightClass, frames }),
       });
       setProgress(75);
       setProgressLabel("Building practice plan...");
@@ -75,7 +123,7 @@ export default function AnalyzePage() {
   };
 
   const reset = () => {
-    setStep("upload"); setFocus(null); setOppName(""); setOppSchool("");
+    setStep("upload"); setFocus(null); setMyName(""); setOppName(""); setOppSchool("");
     setVideoFile(null); setContext(""); setResult(null); setProgress(0);
   };
 
@@ -299,6 +347,12 @@ export default function AnalyzePage() {
 
       {/* Optional context */}
       <div className="flex flex-col gap-3 mb-8">
+        <div className="rounded-xl px-4 py-2" style={{ background: "var(--card)", border: "1px solid var(--accent)", boxShadow: "0 0 0 1px rgba(232,255,58,0.15)" }}>
+          <label className="text-xs uppercase tracking-wide" style={{ color: "var(--accent)" }}>Who are you in this video?</label>
+          <input className="w-full bg-transparent text-sm mt-1 outline-none py-2" style={{ color: "var(--text)" }}
+            placeholder="e.g. #1 in blue, top wrestler, wrestler on the left"
+            value={myName} onChange={e => setMyName(e.target.value)} />
+        </div>
         <div className="rounded-xl px-4 py-2" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
           <label className="text-xs uppercase tracking-wide" style={{ color: "var(--muted)" }}>What are you working on? (optional)</label>
           <input className="w-full bg-transparent text-sm mt-1 outline-none py-2" style={{ color: "var(--text)" }}
