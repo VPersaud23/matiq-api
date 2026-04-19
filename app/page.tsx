@@ -1,65 +1,60 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="max-w-2xl mx-auto px-6 py-12">
+      {/* Hero */}
+      <div className="text-center mb-12">
+        <div className="text-6xl mb-4">🏆</div>
+        <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--accent)" }}>AI Wrestling Coach</p>
+        <h1 className="text-5xl font-black uppercase mb-3" style={{ color: "var(--text)" }}>
+          MAT<span style={{ color: "var(--accent)" }}>IQ</span>
+        </h1>
+        <p className="text-base leading-relaxed mb-8 max-w-sm mx-auto" style={{ color: "var(--muted)" }}>
+          Upload a wrestling clip. Get instant technique feedback and a personalized weekly practice plan.
+        </p>
+        <Link href="/analyze"
+          className="inline-block px-10 py-4 rounded-2xl font-black text-base uppercase tracking-wide transition-all hover:opacity-90"
+          style={{ background: "var(--accent)", color: "#0a0a0f" }}>
+          Start Analysis →
+        </Link>
+      </div>
+
+      {/* How it works */}
+      <div className="mb-10">
+        <p className="text-xs font-bold uppercase tracking-widest mb-4 text-center" style={{ color: "var(--muted)" }}>How It Works</p>
+        <div className="flex flex-col gap-3">
+          {[
+            { step: "1", icon: "🎥", title: "Upload Your Clip", desc: "Any wrestling video — practice, competition, drills. Or just describe what you're working on." },
+            { step: "2", icon: "🤖", title: "AI Identifies & Analyzes", desc: "Claude AI detects the technique, scores your execution, and finds specific issues to fix." },
+            { step: "3", icon: "📅", title: "Get Your Practice Plan", desc: "Receive a full week of targeted drills, daily focus areas, and live wrestling notes." },
+          ].map((item) => (
+            <div key={item.step} className="flex gap-4 rounded-2xl p-5" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0 mt-0.5" style={{ background: "var(--accent)", color: "#0a0a0f" }}>
+                {item.step}
+              </div>
+              <div>
+                <p className="font-black text-sm uppercase mb-1" style={{ color: "var(--text)" }}>{item.icon} {item.title}</p>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>{item.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
+
+      {/* Feature cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/analyze" className="rounded-2xl p-5 transition-all hover:opacity-80" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+          <p className="text-3xl mb-3">🎥</p>
+          <p className="font-black text-sm uppercase mb-1" style={{ color: "var(--text)" }}>Analyze Technique</p>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--muted)" }}>Upload video → full AI coaching report + practice plan</p>
+        </Link>
+        <Link href="/scout" className="rounded-2xl p-5 transition-all hover:opacity-80" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
+          <p className="text-3xl mb-3">🎯</p>
+          <p className="font-black text-sm uppercase mb-1" style={{ color: "var(--text)" }}>Scout Opponents</p>
+          <p className="text-xs leading-relaxed" style={{ color: "var(--muted)" }}>AI scouting reports with tendencies & game plan</p>
+        </Link>
+      </div>
     </div>
   );
 }
